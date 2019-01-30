@@ -1,8 +1,13 @@
-#include<iostream>
-#include<fstream>
-#include<vector>
-#include<sstream>
-#include<ctime>
+#include <iostream>
+#include <string>
+#include <fstream>
+#include <vector>
+#include <sstream>
+#include <ctime>
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
+
 using namespace std;
 
 class item{
@@ -29,24 +34,36 @@ public:
 };
 
 int main(int argc, char *argv[]){
-	const char * path = "/home/joshuaboud/todoList.dat";
-	ifstream fin(path);			// load
+	ifstream fin;
+	ofstream fout;
+	
+	string homepath = getenv("HOME");
+	
+	string path = homepath + "/todoList.dat";
+	
+	fin.open(path);			// load
+	if(!fin){
+		fout.open(path);
+		fout << "";
+		fout.close();
+		fin.open(path);
+	}
 	list myList;
 	myList.load(fin);
 	fin.close();
 	
-	ofstream f(path);
 	if(argc == 1){							// if no arguments, just display list
 		if(myList.empty()){
 			cout << "List is all done. :)\n";
 		}else{
 			myList.print(cout);
 		}
-	}else{		
+	}else{
+		fout.open(path);
 		if(string(argv[1]) == "-a"){		// "todo -a" -> submenu for adding item
 			myList.addItem();
-		}else if(string(argv[1]) == "-r"){	// "todo -r #" -> removes item number #
-			istringstream iss(argv[2]);
+		}else if(string(argv[1]) == "-r" && argc == 3){	// "todo -r #" -> removes item number #
+			stringstream iss(argv[2]);
 			int val;
 			if(iss >> val){
 				if(val > myList.size()){
@@ -54,11 +71,23 @@ int main(int argc, char *argv[]){
 				}else{
 					myList.removeItem(val);
 				}
+			}else if(*argv[2] == 'a'){
+				for(int i = myList.size(); i > 0; i--){
+					myList.removeItem(i);
+				}
+			}else{
+				cout << "-r must be followed by integer.\n";
 			}
+		}else{
+			cout <<		"Usage:\n"
+						"todo\t\t: prints todo list to screen\n"
+						"todo -a\t\t: opens submenu to add item to list\n"
+						"todo -r <int>\t: removes item number <int> from list\n"
+						"todo -r a\t: removes all items in list\n";
 		}
 	}
-	myList.save(f);
-	f.close();
+	myList.save(fout);
+	fout.close();
 	return 0;
 }
 
@@ -121,12 +150,20 @@ void list::print(ostream & out) const{
 	return;
 }
 
+bool list::empty(void) const{
+	return items.empty();
+}
+
+int list::size(void) const{
+	return items.size();
+}
+
 string item::daysLeft(void) const{
 	if(date == "N/A"){
 		return "???";
 	}
-	string  yy_, mm_, dd_;
-	int leap = 0, daysThen, daysNow, diff;
+	string yy_, mm_, dd_;
+	int leap = 0, daysThen, daysNow, diff, yy, mm, dd;
 	
 	istringstream iss(date);			// set item's date as instream iss
 	
@@ -134,9 +171,18 @@ string item::daysLeft(void) const{
 	getline(iss, mm_, '/');
 	getline(iss, dd_);
 	
-	int yy = stoi(yy_);
-	int mm = stoi(mm_);
-	int dd = stoi(dd_);
+	iss.str(yy_);
+	if(!iss>>yy){
+		return "???";
+	}
+	iss.str(mm_);
+	if(!iss>>mm){
+		return "???";
+	}
+	iss.str(dd_);
+	if(!iss>>dd){
+		return "???";
+	}
 	
 	if(yy%4 == 0){
 		leap = 1;
@@ -161,12 +207,4 @@ string item::daysLeft(void) const{
 	diff = daysThen - daysNow;
 	
 	return to_string(diff);
-}
-
-bool list::empty(void) const{
-	return items.empty();
-}
-
-int list::size(void) const{
-	return items.size();
 }
