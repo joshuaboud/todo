@@ -1,5 +1,5 @@
 # todo
-Todo list command line tool
+Todo list command line tool for Linux
 
 # Usage
 Build and place output in path as 'todo'.
