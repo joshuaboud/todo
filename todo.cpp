@@ -66,11 +66,7 @@ int main(int argc, char *argv[]){
 			stringstream iss(argv[2]);
 			int val;
 			if(iss >> val){
-				if(val > myList.size()){
-					cout << "Not a valid list number.\n";
-				}else{
-					myList.removeItem(val);
-				}
+				myList.removeItem(val);
 			}else if(*argv[2] == 'a'){
 				for(int i = myList.size(); i > 0; i--){
 					myList.removeItem(i);
@@ -124,12 +120,14 @@ void list::addItem(void){
 }
 
 void list::removeItem(unsigned int num_){
-	if(num_ <= items.size()){
+	if(num_ <= items.size() && num_ > 0 && !items.empty()){
 		cout << "Removed item: " << items[num_-1].title << endl;
 		for(unsigned int i = num_-1; i<items.size()-1; i++){	// shift all items after num back
 			items[i] = items[i+1];
 		}
 		items.pop_back();										// delete last
+	}else{
+		cout << "Not a valid list number.\n";
 	}
 	return;
 }
@@ -144,8 +142,10 @@ void list::save(ostream & out) const{
 
 void list::print(ostream & out) const{
 	out << "TODO:\n";
-	for(unsigned int i = 0; i<items.size(); i++){
-		out << i+1 << ". " << items[i].title << ". " << items[i].daysLeft() << " days left. (due " << items[i].date << ")\n";
+	if(!items.empty()){
+		for(unsigned int i = 0; i<items.size(); i++){
+			out << i+1 << ". " << items[i].title << ". " << items[i].daysLeft() << " days left. (due " << items[i].date << ")\n";
+		}
 	}
 	return;
 }
@@ -159,28 +159,18 @@ int list::size(void) const{
 }
 
 string item::daysLeft(void) const{
-	if(date == "N/A"){
+	if(date == "N/A")
 		return "???";
-	}
-	string yy_, mm_, dd_;
+	
 	int leap = 0, daysThen, daysNow, diff, yy, mm, dd;
 	
 	istringstream iss(date);			// set item's date as instream iss
 	
-	getline(iss, yy_, '/');
-	getline(iss, mm_, '/');
-	getline(iss, dd_);
+	char reject;
 	
-	iss.str(yy_);
-	if(!iss>>yy){
-		return "???";
-	}
-	iss.str(mm_);
-	if(!iss>>mm){
-		return "???";
-	}
-	iss.str(dd_);
-	if(!iss>>dd){
+	iss >> yy >> reject >> mm >> reject >> dd;		//	ignore '/' in date
+	
+	if (!yy || !mm || !dd){
 		return "???";
 	}
 	
