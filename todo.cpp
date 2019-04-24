@@ -5,8 +5,6 @@
 #include <sstream>
 #include <ctime>
 #include <unistd.h>
-#include <sys/types.h>
-#include <pwd.h>
 
 using namespace std;
 
